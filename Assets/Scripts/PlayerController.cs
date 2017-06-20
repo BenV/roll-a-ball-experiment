@@ -8,14 +8,17 @@ using System.Collections;
 public class PlayerController : MonoBehaviour {
     private const string PICK_UP_TAG = "Pick Up";
 
-    // Create public variables for player speed, and for the Text UI game objects
+    // Create public variables for player speed, time allowed, and for the Text UI game objects
     public float speed;
+    public float timeAllowed;
     public Text countText;
-    public Text winText;
+    public Text gameOverText;
+    public GameObject timer;
 
     // Create private references to the rigidbody component on the player, and the count of pick up objects picked up so far
     private Rigidbody rb;
     private int count;
+    private float timeRemaining;
 
     // At the start of the game..
     void Start() {
@@ -25,11 +28,50 @@ public class PlayerController : MonoBehaviour {
         // Set the count to zero
         count = 0;
 
+        // Set the time remaining equal to the "lose" time
+        timeRemaining = timeAllowed;
+
         // Run the SetCountText function to update the UI (see below)
         SetCountText();
 
-        // Set the text property of our Win Text UI to an empty string, making the 'You Win' (game over message) blank
-        winText.text = "";
+        // Set the text property of our Game Over Text UI to an empty string, making the game over message blank
+        gameOverText.text = "";
+    }
+
+    void Update() {
+        // If the game is already over we don't need to do anything here
+        if (GameOver()) {
+            return;
+        }
+
+        // Update the timer and check to see if the player has lost
+        UpdateTimer();
+        if (GameLost()) {
+            gameOverText.text = "You Lose :(";
+        }
+    }
+
+    void UpdateTimer() {
+        // Subtract from the time remaining and update the timer UI. Use Mathf.Max to make sure
+        // we don't go below zero when subtracting.
+        timeRemaining = Mathf.Max(0, timeRemaining - Time.deltaTime);
+        float timeLeft = timeRemaining / timeAllowed;
+        timer.transform.localScale = new Vector3(timeLeft, 1, 1);
+    }
+
+    bool GameLost() {
+        // The player has lost if no more time is remaining
+        return timeRemaining <= 0;
+    }
+
+    bool GameWon() {
+        // The player has won if there are no "Pick ups" remaining, and they have not lost
+        return !GameLost() && GameObject.FindGameObjectsWithTag(PICK_UP_TAG).Length == 0;
+    }
+
+    bool GameOver() {
+        // The game is over if the player has either won or lost
+        return GameWon() || GameLost();
     }
 
     // Each physics step..
@@ -68,9 +110,9 @@ public class PlayerController : MonoBehaviour {
         countText.text = "Count: " + count.ToString();
 
         // If there are no more objects in the scene with the "Pick Up" tag, then the player has won 
-        if (GameObject.FindGameObjectsWithTag(PICK_UP_TAG).Length == 0) {
-            // Set the text value of our 'winText'
-            winText.text = "You Win!";
+        if (GameWon()) {
+            // Set the text value of our game over text
+            gameOverText.text = "You Win!";
         }
     }
 }
