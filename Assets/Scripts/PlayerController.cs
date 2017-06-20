@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using System.Collections;
 
 public class PlayerController : MonoBehaviour {
+    private const string PICK_UP_TAG = "Pick Up";
 
     // Create public variables for player speed, and for the Text UI game objects
     public float speed;
@@ -49,7 +50,7 @@ public class PlayerController : MonoBehaviour {
     // store a reference to that collider in a variable named 'other'..
     void OnTriggerEnter(Collider other) {
         // ..and if the game object we intersect has the tag 'Pick Up' assigned to it..
-        if (other.gameObject.CompareTag("Pick Up")) {
+        if (other.gameObject.CompareTag(PICK_UP_TAG)) {
             // Make the other game object (the pick up) inactive, to make it disappear
             other.gameObject.SetActive(false);
 
@@ -66,8 +67,8 @@ public class PlayerController : MonoBehaviour {
         // Update the text field of our 'countText' variable
         countText.text = "Count: " + count.ToString();
 
-        // Check if our 'count' is equal to or exceeded 12
-        if (count >= 12) {
+        // If there are no more objects in the scene with the "Pick Up" tag, then the player has won 
+        if (GameObject.FindGameObjectsWithTag(PICK_UP_TAG).Length == 0) {
             // Set the text value of our 'winText'
             winText.text = "You Win!";
         }
