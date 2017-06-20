@@ -14,11 +14,13 @@ public class PlayerController : MonoBehaviour {
     public Text countText;
     public Text gameOverText;
     public GameObject timer;
+    public GameObject cubePrefab;
 
     // Create private references to the rigidbody component on the player, and the count of pick up objects picked up so far
     private Rigidbody rb;
     private int count;
     private float timeRemaining;
+    private GameObject pickUps;
 
     // At the start of the game..
     void Start() {
@@ -36,11 +38,16 @@ public class PlayerController : MonoBehaviour {
 
         // Set the text property of our Game Over Text UI to an empty string, making the game over message blank
         gameOverText.text = "";
+
+        // Start the initial cube spawn timer
+        pickUps = GameObject.Find("Pick Ups");
+        SpawnCube();
     }
 
     void Update() {
         // If the game is already over we don't need to do anything here
         if (GameOver()) {
+            CancelInvoke("SpawnCube");
             return;
         }
 
@@ -49,6 +56,16 @@ public class PlayerController : MonoBehaviour {
         if (GameLost()) {
             gameOverText.text = "You Lose :(";
         }
+    }
+
+    void SpawnCube() {
+        // Create a new cube and give it a random position
+        GameObject newCube = Instantiate(cubePrefab, pickUps.transform);
+        float existingY = newCube.transform.position.y;
+        newCube.transform.position = new Vector3(Random.Range(-5, 5), existingY, Random.Range(-5, 5));
+
+        // Invoke schedules a method to be called at some time in the future
+        Invoke("SpawnCube", Random.Range(5, 10));
     }
 
     void UpdateTimer() {
@@ -101,6 +118,11 @@ public class PlayerController : MonoBehaviour {
 
             // Run the 'SetCountText()' function (see below)
             SetCountText();
+
+            // If the game is not over add to the available time to give the player a boost
+            if (!GameOver()) {
+                timeRemaining = Mathf.Min(timeAllowed, timeRemaining + 1);
+            }
         }
     }
 
