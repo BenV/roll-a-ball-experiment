@@ -19,6 +19,7 @@ public class PlayerController : MonoBehaviour {
     public Text gameOverText;
     public GameObject timer;
     public GameObject cubePrefab;
+    public GameObject explosionPrefab;
 
     // Static variables will retain their value even after we re-load the scene
     private static int level = 1;
@@ -130,6 +131,9 @@ public class PlayerController : MonoBehaviour {
         if (other.gameObject.CompareTag(PICK_UP_TAG)) {
             // Make the other game object (the pick up) inactive, to make it disappear
             other.gameObject.SetActive(false);
+
+            // Create an explosion
+            Instantiate(explosionPrefab, other.gameObject.transform.position, Quaternion.identity);
 
             // Add one to the score variable 'count'
             count = count + 1;
