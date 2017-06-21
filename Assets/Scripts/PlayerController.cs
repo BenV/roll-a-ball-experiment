@@ -2,6 +2,7 @@
 
 // Include the namespace required to use Unity UI
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 using System.Collections;
 
@@ -9,12 +10,18 @@ public class PlayerController : MonoBehaviour {
     private const string PICK_UP_TAG = "Pick Up";
 
     // Create public variables for player speed, time allowed, and for the Text UI game objects
+    public int numLevels = 5;
+    public float minSpawnTime = 5;
+    public float maxSpawnTime = 10;
     public float speed;
     public float timeAllowed;
     public Text countText;
     public Text gameOverText;
     public GameObject timer;
     public GameObject cubePrefab;
+
+    // Static variables will retain their value even after we re-load the scene
+    private static int level = 1;
 
     // Create private references to the rigidbody component on the player, and the count of pick up objects picked up so far
     private Rigidbody rb;
@@ -33,8 +40,8 @@ public class PlayerController : MonoBehaviour {
         // Set the time remaining equal to the "lose" time
         timeRemaining = timeAllowed;
 
-        // Run the SetCountText function to update the UI (see below)
-        SetCountText();
+        // Run the SetScoreText function to update the UI (see below)
+        SetScoreText();
 
         // Set the text property of our Game Over Text UI to an empty string, making the game over message blank
         gameOverText.text = "";
@@ -64,14 +71,20 @@ public class PlayerController : MonoBehaviour {
         float existingY = newCube.transform.position.y;
         newCube.transform.position = new Vector3(Random.Range(-5, 5), existingY, Random.Range(-5, 5));
 
+        // Modify the spawn time to make cubes spawn faster as the difficulty increases
+        float modifier = (1.0f - DifficultyMultiplier() / 2.0f);
+
         // Invoke schedules a method to be called at some time in the future
-        Invoke("SpawnCube", Random.Range(5, 10));
+        Invoke("SpawnCube", Random.Range(minSpawnTime, maxSpawnTime) * modifier);
     }
 
     void UpdateTimer() {
+        // Subtract time at a faster rate depending on our difficulty multiplier
+        float dt = Time.deltaTime * (DifficultyMultiplier() + 1);
+
         // Subtract from the time remaining and update the timer UI. Use Mathf.Max to make sure
         // we don't go below zero when subtracting.
-        timeRemaining = Mathf.Max(0, timeRemaining - Time.deltaTime);
+        timeRemaining = Mathf.Max(0, timeRemaining - dt);
         float timeLeft = timeRemaining / timeAllowed;
         timer.transform.localScale = new Vector3(timeLeft, 1, 1);
     }
@@ -89,6 +102,11 @@ public class PlayerController : MonoBehaviour {
     bool GameOver() {
         // The game is over if the player has either won or lost
         return GameWon() || GameLost();
+    }
+
+    float DifficultyMultiplier() {
+        // Multiplier is 0 on level 1, and increases linearly for each level
+        return (level - 1.0f) / (numLevels - 1.0f);
     }
 
     // Each physics step..
@@ -116,25 +134,38 @@ public class PlayerController : MonoBehaviour {
             // Add one to the score variable 'count'
             count = count + 1;
 
-            // Run the 'SetCountText()' function (see below)
-            SetCountText();
+            // Run the 'SetScoreText()' function (see below)
+            SetScoreText();
 
             // If the game is not over add to the available time to give the player a boost
             if (!GameOver()) {
-                timeRemaining = Mathf.Min(timeAllowed, timeRemaining + 1);
+                // Reduce the amount of the time bonus depending on the difficulty multiplier
+                float modifier = DifficultyMultiplier() * 0.75f;
+                timeRemaining = Mathf.Min(timeAllowed, timeRemaining + (1.0f - modifier));
             }
         }
     }
 
     // Create a standalone function that can update the 'countText' UI and check if the required amount to win has been achieved
-    void SetCountText() {
+    void SetScoreText() {
         // Update the text field of our 'countText' variable
-        countText.text = "Count: " + count.ToString();
+        countText.text = "Level: " + level + "\nCount: " + count.ToString();
 
         // If there are no more objects in the scene with the "Pick Up" tag, then the player has won 
         if (GameWon()) {
             // Set the text value of our game over text
-            gameOverText.text = "You Win!";
+            if (level == numLevels) {
+                gameOverText.text = "YOU DID IT!!!";
+            } else {
+                gameOverText.text = "Nice work, you beat level " + level + "!";
+                Invoke("StartNextLevel", 5);
+            }
         }
+    }
+
+    void StartNextLevel() {
+        // Increment the level (this is shorthand for "level = level + 1", and reload the scene
+        level++;
+        SceneManager.LoadScene(0);
     }
 }
