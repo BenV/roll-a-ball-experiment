@@ -168,7 +168,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     void StartNextLevel() {
-        // Increment the level (this is shorthand for "level = level + 1", and reload the scene
+        // Increment the level (this is shorthand for "level = level + 1"), and reload the scene
         level++;
         SceneManager.LoadScene(0);
     }
